@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using LabApi.Adapters;
 using LabApi.Model;
-using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LabApi.Data.Repositories
 {
@@ -28,10 +31,15 @@ namespace LabApi.Data.Repositories
         /// <param name="failedMessage">Текст ошибки</param>
         public void AddMail(MailModel mail, SendResult result, string failedMessage)
         {
-            Mail dbMail = MailAdapter.ToData(mail, configuration.GetSection("RecipientsSeparator").Value[0]);
+            Mail dbMail = MailAdapter.ToData(mail, true);
             dbMail.SendResult = result;
             dbMail.FailedMessage = failedMessage;
             context.Mails.Add(dbMail);
+            context.SaveChanges();
+            foreach (string recipient in mail.Recipients)
+            {
+                AddRecipient(recipient, dbMail.MailId);
+            }
             context.SaveChanges();
         }
 
@@ -39,9 +47,22 @@ namespace LabApi.Data.Repositories
         /// Получение списка сообщений с полями Subject, Body и Recipients
         /// </summary>
         /// <returns></returns>
-        public List<Mail> GetAllMails()
+        public List<MailModel> GetAllMails()
         {
-            return context.Mails.Select(x => x).ToList();
+            var dataList = context.Mails.Select(x => x).Include(x => x.Recipients);
+            return dataList.Select(x => MailAdapter.ToModel(x)).ToList();
+        }
+
+        public bool AddRecipient(string requestRecipient, int mailId)
+        {
+            Recipient recipient = new Recipient()
+            {
+                RecipientName = requestRecipient,
+                MailId = mailId
+            };
+
+            context.Recipients.Add(recipient);
+            return context.SaveChanges() > 0;
         }
     }
 }

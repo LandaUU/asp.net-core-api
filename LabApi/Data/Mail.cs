@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LabApi.Data
 {
@@ -16,27 +19,22 @@ namespace LabApi.Data
         /// Отправитель
         /// </summary>
         public string Subject { get; set; }
-
         /// <summary>
         /// Тело сообщения
         /// </summary>
         public string Body { get; set; }
-
         /// <summary>
-        /// Получатели, delimiter задается в файле конфигурации
+        /// Получатели
         /// </summary>
-        public string Recipients { get; set; }
-
+        public List<Recipient> Recipients { get; set; }
         /// <summary>
         /// Дата создания записи сообщения в БД
         /// </summary>
         public DateTime DateCreate { get; set; }
-
         /// <summary>
         /// Результат отправки сообщения (OK, Failed)
         /// </summary>
         public SendResult SendResult { get; set; }
-
         /// <summary>
         /// Описание ошибки при отправлении сообщения
         /// </summary>

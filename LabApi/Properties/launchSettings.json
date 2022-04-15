@@ -17,7 +17,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "MonqlabApi": {
+    "LabApi": {
       "commandName": "Project",
       "dotnetRunMessages": "true",
       "launchBrowser": true,

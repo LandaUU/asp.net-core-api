@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>MonqlabApi</RootNamespace>
+    <RootNamespace>LabApi</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

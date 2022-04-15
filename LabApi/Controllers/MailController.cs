@@ -1,14 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Mail;
-using LabApi.Data;
-using LabApi.Data.Repositories;
-using LabApi.Model;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using LabApi.Data;
+using LabApi.Data.Repositories;
+using LabApi.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Mail;
+using System.Threading.Tasks;
 
 namespace LabApi.Controllers
 {
@@ -19,9 +21,9 @@ namespace LabApi.Controllers
     [ApiController]
     public class MailController : ControllerBase
     {
+        private IMailRepository _repository;
         private IConfiguration _configuration;
         private ILogger<MailController> _logger;
-        private IMailRepository _repository;
 
         /// <summary>
         /// Конструктор с параметрами для Dependency injection
@@ -46,13 +48,17 @@ namespace LabApi.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public ActionResult PostMethod(MailModel mail)
         {
-            _logger.LogInformation(
-                @$"POST-request, Subject: {mail.Subject}, Recipients : {string.Join(",", mail.Recipients)}");
+            _logger.LogInformation(@$"POST-request, Subject: {mail.Subject}, Recipients : {string.Join(",", mail.Recipients)}");
             _logger.LogDebug($@"Body of message:\n{mail.Body}");
+            if (!mail.Validate())
+            {
+                _logger.LogWarning("Invalid E-Mail");
+                return BadRequest("Invalid E-Mail");
+            }
             string failedMessage = "";
             try
             {
-                if (SendMail(mail.Subject, mail.Body, mail.Recipients, ref failedMessage))
+                if (true)//SendMail(mail.Subject, mail.Body, mail.Recipients, ref failedMessage))
                 {
                     _logger.LogInformation("E-Mail Message succesfully sent, OK");
                     _repository.AddMail(mail, SendResult.OK, failedMessage);
@@ -61,7 +67,6 @@ namespace LabApi.Controllers
                 {
                     _repository.AddMail(mail, SendResult.Failed, failedMessage);
                 }
-
                 return Ok();
             }
             catch (Exception ex)
@@ -91,6 +96,7 @@ namespace LabApi.Controllers
                 _logger.LogError($"Received an error while getting messages: {ex.Message}");
                 return StatusCode(500);
             }
+
         }
 
 
@@ -108,9 +114,7 @@ namespace LabApi.Controllers
         {
             try
             {
-                using (SmtpClient client =
-                       new SmtpClient(_configuration.GetSection("SMTP").GetSection("SmtpHost").Value,
-                           int.Parse(_configuration.GetSection("SMTP").GetSection("Port").Value)))
+                using (SmtpClient client = new SmtpClient(_configuration.GetSection("SMTP").GetSection("SmtpHost").Value, int.Parse(_configuration.GetSection("SMTP").GetSection("Port").Value)))
                 {
                     client.Credentials = new NetworkCredential()
                     {
@@ -119,8 +123,7 @@ namespace LabApi.Controllers
                     };
                     client.DeliveryMethod = SmtpDeliveryMethod.Network;
                     client.EnableSsl = true;
-                    client.Send(_configuration.GetSection("SMTP").GetSection("Username").Value,
-                        string.Join(",", recipients), subject, body);
+                    client.Send(_configuration.GetSection("SMTP").GetSection("Username").Value, string.Join(",", recipients), subject, body);
                     return true;
                 }
             }
@@ -131,5 +134,6 @@ namespace LabApi.Controllers
                 return false;
             }
         }
+
     }
 }
